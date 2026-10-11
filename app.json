@@ -1,0 +1,23 @@
+{
+  "pages": [
+    "pages/agent/index",
+    "pages/record/index",
+    "pages/night-settings/index",
+    "pages/breathe/index",
+    "pages/body/index",
+    "pages/body/part",
+    "pages/settings/index",
+    "pages/focus/index",
+    "pages/sound/index",
+    "pages/journal/index",
+    "pages/sleep/index"
+  ],
+  "window": {
+    "navigationStyle": "custom",
+    "backgroundColor": "#061719",
+    "backgroundTextStyle": "dark"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

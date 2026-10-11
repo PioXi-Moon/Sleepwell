@@ -1,0 +1,176 @@
+<view class="page-shell breathe-page world-bg--{{previewWorld || settings.world}}">
+  <view class="topbar" style="{{nav.topbarStyle}}">
+    <view class="topbar-leading">
+      <button class="icon-button icon-button--exit" bindtap="exitMiniProgram" aria-label="退出小程序">
+        <view class="exit-icon" aria-hidden="true"><view class="exit-icon__line exit-icon__line--a"></view><view class="exit-icon__line exit-icon__line--b"></view></view>
+      </button>
+      <button class="icon-button topbar-settings" bindtap="openSettings" aria-label="呼吸设置">
+        <view class="sliders-icon"><view class="slider-line"></view><view class="slider-line"></view><view class="slider-line"></view></view>
+      </button>
+    </view>
+    <view class="topbar-trailing">
+      <button class="icon-button icon-button--wide" bindtap="openFocus" aria-label="关灯引导">
+        <text class="moon-icon">☾</text>
+        <text>关灯</text>
+      </button>
+    </view>
+  </view>
+
+  <view class="prompt-block {{phase !== 'idle' ? 'is-active' : ''}}" style="top: {{nav.navigationBottom + 12}}px;">
+    <text wx:if="{{firstHint}}" class="first-hint">按住开始，4秒后可以松开</text>
+    <text class="main-prompt">{{mainPrompt}}</text>
+    <text class="sub-prompt">{{subPrompt}}</text>
+    <text wx:if="{{phase !== 'idle' && phase !== 'completed'}}" class="phase-count">{{countdown}} 秒</text>
+  </view>
+
+  <view class="completion-mask {{showCompletion ? 'is-visible' : ''}}" catchtap="finishQuietly">
+    <view class="completion-mist"></view>
+    <view class="completion-content" catchtap="noop">
+      <text class="completion-eyebrow">{{cycles}} 次呼吸</text>
+      <text class="completion-title">可以停在这里。</text>
+      <text class="completion-copy">从信息流里回来一点点，已经足够。</text>
+      <view wx:if="{{showOutcome}}" class="outcome-row">
+        <text class="outcome-label">现在感觉</text>
+        <view class="outcome-options">
+          <button data-outcome="relieved" bindtap="selectOutcome">松一点</button>
+          <button data-outcome="same" bindtap="selectOutcome">差不多</button>
+          <button data-outcome="tense" bindtap="selectOutcome">还紧绷</button>
+        </view>
+      </view>
+      <button class="primary-button" bindtap="goBody">看看身体</button>
+      <button class="secondary-button" bindtap="continueBreathing">再呼吸一会儿</button>
+      <button class="text-button" bindtap="finishQuietly">就到这里</button>
+    </view>
+  </view>
+
+  <view
+    class="breath-stage"
+    style="top: {{nav.navigationBottom + 64}}px;"
+    catchtouchstart="handlePressStart"
+    catchtouchend="handlePressEnd"
+    catchtouchcancel="handlePressCancel"
+    aria-label="按住吸气，松开呼气"
+  >
+    <world-visual world="{{previewWorld || settings.world}}" phase="{{phase}}" cycles="{{cycles}}" target-cycles="{{settings.targetCycles}}"></world-visual>
+    <view class="breath-orb breath-orb--{{phase}}">
+      <view class="breath-orb__halo breath-orb__halo--outer"></view>
+      <view class="breath-orb__halo breath-orb__halo--inner"></view>
+      <view class="breath-orb__shell"><view class="breath-orb__core"></view></view>
+    </view>
+    <view class="touch-ring {{phase !== 'idle' ? 'is-active' : ''}}"></view>
+  </view>
+
+  <view class="cycle-dots" aria-label="已完成 {{cycles}} 次呼吸">
+    <view
+      wx:for="{{cycleDots}}"
+      wx:key="*this"
+      class="cycle-dot {{index < cycles ? 'is-filled' : ''}}"
+    ></view>
+    <text wx:if="{{cycles > 0}}" class="cycle-count">{{cycles}}</text>
+  </view>
+  <button wx:if="{{phase !== 'idle' && phase !== 'completed'}}" class="stop-breath" bindtap="stopBreathing" aria-label="停止呼吸">停止</button>
+
+  <view class="bottom-nav safe-bottom">
+    <button class="nav-item" bindtap="goAgent">
+      <image class="nav-icon" src="/assets/agent/icons/cat-muted.png" aria-hidden="true"></image>
+      <text>夜喵</text>
+    </button>
+    <button class="nav-item nav-item--world is-selected" bindlongpress="openWorldPicker" bindtap="noop" aria-label="长按切换呼吸世界">
+      <view class="nav-icon world-nav-icon" aria-hidden="true">
+        <view class="world-nav-icon__core"></view>
+        <view class="world-nav-icon__ray world-nav-icon__ray--top"></view>
+        <view class="world-nav-icon__ray world-nav-icon__ray--right"></view>
+        <view class="world-nav-icon__ray world-nav-icon__ray--bottom"></view>
+        <view class="world-nav-icon__ray world-nav-icon__ray--left"></view>
+      </view>
+      <view class="nav-active-indicator" aria-hidden="true"></view>
+      <text>呼吸世界</text>
+    </button>
+    <button class="nav-item" bindtap="openRecords">
+      <view class="nav-icon record-nav-icon" aria-hidden="true">
+        <view class="record-nav-icon__sheet"></view>
+        <view class="record-nav-icon__line record-nav-icon__line--one"></view>
+        <view class="record-nav-icon__line record-nav-icon__line--two"></view>
+      </view>
+      <text>记录</text>
+    </button>
+  </view>
+
+  <view class="body-nudge {{showBodyNudge ? 'is-visible' : ''}}">
+    <view class="nudge-mist"></view>
+    <view class="nudge-content">
+      <text class="nudge-copy">刚刚呼吸的时候，</text>
+      <text class="nudge-title">身体里有哪里正在用力吗？</text>
+      <text class="nudge-sub">可以点一个地方看看。</text>
+      <button class="primary-button" bindtap="goBody">看看身体</button>
+      <button class="text-button" bindtap="skipBody">暂时不想关注身体</button>
+    </view>
+  </view>
+
+  <view class="sheet-mask {{showWorldPicker ? 'is-open' : ''}}" catchtap="closeWorldPicker">
+    <view class="bottom-sheet world-sheet" catchtap="noop">
+      <view class="sheet-handle"></view>
+      <button class="sheet-close" catchtap="closeWorldPicker" aria-label="关闭场景选择"><view class="close-icon"></view></button>
+      <text class="sheet-kicker">在一个世界里呼吸</text>
+      <view class="world-wheel">
+        <view class="wheel-center">
+          <text class="wheel-glyph">{{currentWorld.glyph}}</text>
+          <text>{{currentWorld.name}}</text>
+        </view>
+        <button
+          wx:for="{{worlds}}"
+          wx:key="id"
+          class="world-option world-option--{{index}} {{item.id === (previewWorld || settings.world) ? 'is-selected' : ''}}"
+          data-world="{{item.id}}"
+          catchtouchstart="previewWorld"
+          catchtouchend="chooseWorld"
+          bindtap="chooseWorld"
+        >
+          <text class="world-option__glyph">{{item.glyph}}</text>
+          <text class="world-option__name">{{item.name}}</text>
+        </button>
+      </view>
+      <text class="world-tip">触碰选择 · 松开确认</text>
+    </view>
+  </view>
+
+  <view class="sheet-mask {{showSettings ? 'is-open' : ''}}" catchtap="closeSettings">
+    <view class="bottom-sheet" catchtap="noop">
+      <view class="sheet-handle"></view>
+      <button class="sheet-close" catchtap="closeSettings" aria-label="关闭呼吸设置"><view class="close-icon"></view></button>
+      <text class="sheet-title">呼吸设置</text>
+      <button class="setting-row" bindtap="openWorldPickerFromSettings">
+        <text class="setting-label">我的呼吸世界</text>
+        <text class="setting-value">{{currentWorld.name}} ›</text>
+      </button>
+      <picker mode="selector" range="{{rhythms}}" range-key="name" bindchange="onRhythmChange">
+        <view class="setting-row">
+          <text class="setting-label">呼吸节奏</text>
+          <text class="setting-value">{{currentRhythm.name}} {{settings.inhaleSeconds}}-{{settings.holdSeconds}}-{{settings.exhaleSeconds}} ›</text>
+        </view>
+      </picker>
+      <picker mode="selector" range="{{cycleOptions}}" range-key="name" bindchange="onCycleChange">
+        <view class="setting-row">
+          <text class="setting-label">呼吸次数</text>
+          <text class="setting-value">{{currentCycle.name}} ›</text>
+        </view>
+      </picker>
+      <picker mode="selector" range="{{soundOptions}}" range-key="name" bindchange="onSoundChange">
+        <view class="setting-row">
+          <text class="setting-label">声音</text>
+          <text class="setting-value">{{currentSound.name}} ›</text>
+        </view>
+      </picker>
+      <view class="setting-row">
+        <text class="setting-label">触觉反馈</text>
+        <switch checked="{{settings.hapticEnabled}}" color="#acc7b1" data-key="hapticEnabled" bindchange="onToggleChange"></switch>
+      </view>
+      <view class="setting-row">
+        <text class="setting-label">结束提示音</text>
+        <switch checked="{{settings.endSoundEnabled}}" color="#acc7b1" data-key="endSoundEnabled" bindchange="onToggleChange"></switch>
+      </view>
+      <button class="sound-link" data-url="/pages/sound/index" bindtap="goPage">打开白噪音播放器 ›</button>
+    </view>
+  </view>
+
+</view>

@@ -1,0 +1,20 @@
+# WeChat DevTools local preferences
+project.private.config.json
+
+# Local design references and generated previews
+Fig/
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Temporary files and logs
+*.log
+*.tmp
+*.temp
+
+# Dependency/cache directories if introduced later
+node_modules/
+miniprogram_npm/

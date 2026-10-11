@@ -1,0 +1,12 @@
+.focus-page { min-height: 100vh; }
+.topbar-label { color: var(--text-soft); font-size: 24rpx; letter-spacing: 2rpx; }
+.topbar-spacer { width: 80rpx; }
+.focus-content { padding: 56rpx 48rpx 72rpx; }
+.focus-content .page-title { display: block; max-width: 580rpx; }
+.focus-steps { margin: 70rpx 0 56rpx; }
+.focus-step { display: flex; gap: 24rpx; padding: 28rpx 0; border-bottom: 1rpx solid var(--line); }
+.focus-step__number { display: flex; align-items: center; justify-content: center; flex: 0 0 48rpx; width: 48rpx; height: 48rpx; border: 1rpx solid rgba(204, 227, 194, 0.3); border-radius: 50%; color: var(--accent); }
+.focus-step__title, .focus-step__detail { display: block; }
+.focus-step__title { font-size: 29rpx; }
+.focus-step__detail { margin-top: 10rpx; color: var(--text-soft); font-size: 24rpx; line-height: 1.6; }
+.focus-message { display: block; margin-bottom: 32rpx; color: var(--accent); font-size: 23rpx; line-height: 1.7; }

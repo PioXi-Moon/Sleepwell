@@ -1,0 +1,15 @@
+{
+  "renderer": "skyline",
+  "componentFramework": "glass-easel",
+  "navigationStyle": "custom",
+  "rendererOptions": {
+    "skyline": {
+      "defaultDisplayBlock": true,
+      "defaultContentBox": true
+    }
+  },
+  "usingComponents": {
+    "world-visual": "/components/world-visual/index"
+  },
+  "disableScroll": true
+}

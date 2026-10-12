@@ -126,6 +126,16 @@ function mapHistory(history) {
 // - onComplete({ text, recommendation, fallback })：对话结束
 // - onError(reason)：仅在被中断或彻底失败时触发（内部已包含规则引擎回退）
 // 返回 { abort() } 用于取消请求。
+function gatewayHeaders() {
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${secrets.modelGateway.apiKey}`
+  };
+  // 大赛模型试验验证码：网关当前忽略则无副作用，开始校验即生效。
+  if (secrets.modelGateway.verificationCode) headers['X-Verification-Code'] = secrets.modelGateway.verificationCode;
+  return headers;
+}
+
 function chat(options) {
   const opts = options || {};
   const { topic = '', history = [], answers = [], context = '' } = opts;
@@ -177,10 +187,7 @@ function chat(options) {
         url: secrets.modelGateway.baseUrl,
         method: 'POST',
         timeout: REQUEST_TIMEOUT_MS,
-        header: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${secrets.modelGateway.apiKey}`
-        },
+        header: gatewayHeaders(),
         data: { model: secrets.modelGateway.model, stream: false, temperature: 0.7, max_tokens: 400, messages },
         success(res) {
           const content = res && res.data && res.data.choices && res.data.choices[0]
@@ -208,10 +215,7 @@ function chat(options) {
       method: 'POST',
       enableChunked: true,
       timeout: REQUEST_TIMEOUT_MS,
-      header: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${secrets.modelGateway.apiKey}`
-      },
+      header: gatewayHeaders(),
       data: { model: secrets.modelGateway.model, stream: true, temperature: 0.7, max_tokens: 400, messages },
       success() {
         // 分块传输结束；若一个字节都没收到则视为失败并回退。
@@ -254,4 +258,4 @@ function chat(options) {
   };
 }
 
-module.exports = { chat, splitResponse, splitRecommendation, sanitizeRecommendation, buildSystemPrompt, REC_MARKER };
+module.exports = { chat, splitResponse, splitRecommendation, sanitizeRecommendation, buildSystemPrompt, gatewayHeaders, REC_MARKER };

@@ -5,7 +5,8 @@ module.exports = {
   modelGateway: {
     baseUrl: 'https://modelgateway.zju.edu.cn/v1/chat/completions',
     apiKey: '在此填入模型网关 API Key',
-    model: 'deepseek-v4-flash-780k-local'
+    model: 'deepseek-v4-flash-780k-local',
+    verificationCode: '在此填入模型试验验证码（如不需要可留空字符串）'
   },
   ocr: {
     url: 'https://mcp.zju.edu.cn/api/protal/proxy/system/layout-parsing',

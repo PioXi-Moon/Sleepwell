@@ -139,10 +139,7 @@ function summarizeConversation(messages, topic, done) {
       url: secrets.modelGateway.baseUrl,
       method: 'POST',
       timeout: REQUEST_TIMEOUT_MS,
-      header: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${secrets.modelGateway.apiKey}`
-      },
+      header: require('./agent-client').gatewayHeaders(),
       data: {
         model: secrets.modelGateway.model,
         stream: false,

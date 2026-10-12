@@ -1,11 +1,13 @@
 const navigation = require('../../utils/navigation');
 const { getNavigationMetrics } = require('../../utils/layout');
 const nightPreferences = require('../../services/night-preferences');
+const storage = require('../../services/storage');
 const guide = require('../../utils/agent-guide');
 const agentContext = require('../../utils/agent-context');
 const agentMemory = require('../../services/agent-memory');
 const agentClient = require('../../services/agent-client');
 const skillRegistry = require('../../skills/registry');
+const agentIcons = require('../../utils/agent-icons');
 
 const RENDER_THROTTLE_MS = 80;
 
@@ -31,6 +33,8 @@ Page({
     keyboardHeight: 0,
     inputFocus: false,
     recentSessions: [],
+    icons: agentIcons,
+    lastAgentId: '',
     totalBreaths: 0,
     sevenDay: { activeDays: 0, completedSessions: 0, outcomes: { relieved: 0, same: 0, tense: 0 } }
   },
@@ -119,9 +123,11 @@ Page({
     const { agentId, history, answers } = turn;
     if (this.pendingAgent) this.pendingAgent.abort();
     this.renderedAgentText = null;
+    this.latestStreamText = '';
     this.renderTimer = null;
     this.updateAgentText = (text) => {
       if (!text || text === this.renderedAgentText) return;
+      this.latestStreamText = text;
       if (this.data.awaitingFirst) this.setData({ awaitingFirst: false });
       if (this.renderTimer) return; // 已有排期，等节流窗口到期后统一渲染
       this.renderTimer = setTimeout(() => {
@@ -149,9 +155,12 @@ Page({
         if (this.data.homeState === 'initial') return; // 对话已被关闭，丢弃迟到的回复
         if (this.renderTimer) { clearTimeout(this.renderTimer); this.renderTimer = null; }
         this.flushAgentText(result.text);
+        const messages = this.data.messages.map((item) => (item.id === agentId ? Object.assign({}, item, { done: true }) : item));
         this.setData({
+          messages,
           chatState: 'idle',
           awaitingFirst: false,
+          lastAgentId: agentId,
           recommendation: result.recommendation || null,
           homeState: result.recommendation ? 'recommendation' : 'chat'
         });
@@ -159,6 +168,15 @@ Page({
       },
       onError: () => {
         this.pendingAgent = null;
+        if (this.userStopped) {
+          // 用户主动停止：保留已流出的文本，正常收尾而不是报错。
+          this.userStopped = false;
+          if (this.renderTimer) { clearTimeout(this.renderTimer); this.renderTimer = null; }
+          if (this.latestStreamText) this.flushAgentText(this.latestStreamText);
+          const messages = this.data.messages.map((item) => (item.id === agentId ? Object.assign({}, item, { done: true }) : item));
+          this.setData({ messages, chatState: 'idle', awaitingFirst: false, lastAgentId: agentId });
+          return;
+        }
         this.setData({ chatState: 'error', awaitingFirst: false });
       }
     });
@@ -246,5 +264,46 @@ Page({
     const messages = this.data.messages.slice();
     messages[index] = { id, role: 'skill', text: '已取消，今晚先不做这个' };
     this.setData({ messages });
+  },
+  copyMessage(event) {
+    const item = this.data.messages.find((message) => message.id === event.currentTarget.dataset.id);
+    if (!item || !item.text) return;
+    wx.setClipboardData({ data: item.text });
+  },
+  // 赞/踩互斥切换；再次点击同一枚取消。聚合计数写入本地存储。
+  setFeedback(event) {
+    const { id, value } = event.currentTarget.dataset;
+    if (value !== 'like' && value !== 'dislike') return;
+    let chosen = '';
+    const messages = this.data.messages.map((item) => {
+      if (item.id !== id) return item;
+      chosen = item.feedback === value ? '' : value;
+      return Object.assign({}, item, { feedback: chosen });
+    });
+    this.setData({ messages });
+    if (chosen) this.rememberFeedback(chosen);
+  },
+  rememberFeedback(kind) {
+    try {
+      const counts = storage.read(storage.KEYS.agentFeedback, { like: 0, dislike: 0 });
+      counts[kind] = (counts[kind] || 0) + 1;
+      storage.write(storage.KEYS.agentFeedback, counts);
+    } catch (error) { /* 反馈计数不影响对话 */ }
+  },
+  // 重新生成：清空最后一条夜喵回复并重跑上一轮，不重复用户消息。
+  regenerate() {
+    const turn = this.lastTurn;
+    if (!turn || this.data.chatState === 'sending' || this.data.homeState === 'initial') return;
+    const index = this.data.messages.findIndex((item) => item.id === turn.agentId);
+    if (index === -1) return;
+    const messages = this.data.messages.slice();
+    messages[index] = Object.assign({}, messages[index], { text: '', done: false, feedback: '' });
+    this.setData({ messages, chatState: 'sending', awaitingFirst: true, recommendation: null, homeState: 'chat' });
+    this.runAgentTurn(turn);
+  },
+  stopGeneration() {
+    if (!this.pendingAgent) return;
+    this.userStopped = true;
+    this.pendingAgent.abort();
   }
 });

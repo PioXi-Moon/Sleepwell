@@ -36,7 +36,8 @@ page { background: #061719; --night-gold: #e8c887; --night-text: #f1ebdd; --nigh
 .night-nav-item { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; min-width: 0; min-height: 108rpx; color: var(--night-muted); font-size: 12px; line-height: 1.4; }
 .night-nav-item image { width: 48rpx; height: 48rpx; }
 .night-nav-item.is-active { color: var(--night-gold); }
-.is-pressed { opacity: .72; }
+.is-pressed { opacity: .72; transform: scale(.97); }
+.night-page button { transition: transform .12s ease, opacity .12s ease, background .12s ease; }
 .night-mask { position: absolute; z-index: 30; inset: 0; display: flex; align-items: flex-end; background: rgba(0,9,10,.64); }
 .night-records { width: 100%; max-height: 78vh; padding: 16rpx 32rpx calc(28rpx + env(safe-area-inset-bottom)); border: 1rpx solid rgba(232,200,135,.14); border-radius: 36rpx 36rpx 0 0; background: rgba(10,26,28,.92); backdrop-filter: blur(32rpx); }
 .records-heading { display: flex; align-items: center; justify-content: space-between; margin: 24rpx 0; }
@@ -147,3 +148,24 @@ page { background: #061719; --night-gold: #e8c887; --night-text: #f1ebdd; --nigh
 .inline-input { display:flex; align-items:center; gap:16rpx; padding:12rpx 16rpx; width:100%; border:1rpx solid rgba(168,193,183,.18); border-radius:48rpx; background:linear-gradient(135deg, rgba(20,42,44,.5), rgba(10,26,28,.42)); box-shadow: 0 8rpx 28rpx rgba(0,0,0,.16), inset 0 1rpx 0 rgba(255,255,255,.04); backdrop-filter: blur(20rpx); }.inline-input input { width:0; flex:1; min-width:0; height:44px; color:#f1ebdd; font-size:14px; padding-left:12rpx; }
 .night-page .inline-send { display:flex; align-items:center; justify-content:center; flex:0 0 44px; width:44px; max-width:44px; height:44px; margin:0; padding:0; border-radius:50%; background:linear-gradient(135deg, #f0d49a, #e2bd76); box-shadow: 0 4rpx 20rpx rgba(232,200,135,.28); }.inline-send image { width:22px; height:22px; }.inline-send[disabled] { opacity:.4; }.conversation-end { height:24rpx; }
 .night-page .night-composer { width:100%; max-width:100%; margin-left:0; margin-right:0; }
+
+/* —— 丝滑动效与消息动作行 —— */
+@keyframes message-in { from { opacity: 0; transform: translateY(12rpx); } }
+@keyframes card-in { from { opacity: 0; transform: scale(.98); } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes dot-wave { 0%, 60%, 100% { transform: translateY(0); opacity: .4; } 30% { transform: translateY(-6rpx); opacity: 1; } }
+@keyframes stop-breathe { 50% { box-shadow: 0 0 0 10rpx rgba(232,200,135,.07); } }
+.inline-message, .skill-feedback, .skill-confirm-card { animation: message-in .24s cubic-bezier(.22,.61,.36,1); }
+.agent-recommendation { animation: card-in .26s cubic-bezier(.22,.61,.36,1); }
+.msg-actions { display:flex; gap:6rpx; margin-top:10rpx; animation: fade-in .18s ease-out .06s backwards; }
+.msg-act { display:flex; align-items:center; justify-content:center; width:56rpx; height:56rpx; min-height:44px; padding:0; margin:0; border-radius:16rpx; background:transparent; }
+.msg-act image { width:32rpx; height:32rpx; }
+.msg-act.is-like { background: rgba(232,200,135,.1); }
+.msg-act.is-dislike { background: rgba(201,138,138,.1); }
+.is-act-pressed { transform: scale(.88); background: rgba(168,193,183,.08); }
+.typing-dots { display:flex; align-items:center; gap:8rpx; }
+.typing-dot { width:10rpx; height:10rpx; border-radius:5rpx; background: var(--night-gold); animation: dot-wave 1s ease-in-out infinite; }
+.typing-dot:nth-child(2) { animation-delay: .15s; }
+.typing-dot:nth-child(3) { animation-delay: .3s; }
+.inline-stop { display:flex; align-items:center; justify-content:center; flex:0 0 44px; width:44px; max-width:44px; height:44px; margin:0; padding:0; border:1px solid rgba(232,200,135,.5); border-radius:50%; background:rgba(232,200,135,.12); animation: stop-breathe 1.6s ease-in-out infinite; }
+.inline-stop image { width:22px; height:22px; }

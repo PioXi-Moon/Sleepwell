@@ -31,7 +31,7 @@ test('clears each personal record category without touching settings', () => {
     getStorageSync() { return null; }
   };
   assert.equal(storage.clearPersonalRecords(), true);
-  assert.deepEqual(writes.map((item) => item[0]).sort(), [storage.KEYS.journal, storage.KEYS.sessions, storage.KEYS.sleep].sort());
+  assert.deepEqual(writes.map((item) => item[0]).sort(), [storage.KEYS.agentFeedback, storage.KEYS.agentMemory, storage.KEYS.journal, storage.KEYS.sessions, storage.KEYS.sleep].sort());
   assert.equal(writes.some((item) => item[0] === storage.KEYS.settings), false);
   delete global.wx;
 });

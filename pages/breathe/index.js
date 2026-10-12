@@ -337,16 +337,10 @@ Page({
   },
 
   openRecords() {
-    const recentSessions = storage.getSessions().slice(0, 5).map((item) => ({
-      id: item.id,
-      cycles: item.cycles,
-      part: item.bodyPartName || '',
-      time: this.formatTime(item.startedAt)
-    }));
-    const totalBreaths = storage.getSessions().reduce((sum, item) => sum + (item.cycles || 0), 0);
-    const sevenDay = storage.getSevenDaySummary(Date.now());
-    this.setData({ showRecords: true, recentSessions, totalBreaths, sevenDay });
+    wx.reLaunch({ url: '/pages/record/index' });
   },
+
+  goAgent() { wx.reLaunch({ url: '/pages/agent/index' }); },
 
   closeRecords() {
     this.setData({ showRecords: false });

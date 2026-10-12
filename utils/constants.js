@@ -51,7 +51,8 @@ const DEFAULT_SETTINGS = {
   onboardingSeen: false,
   breathPatternVersion: 2,
   hapticEnabled: true,
-  endSoundEnabled: false
+  endSoundEnabled: false,
+  skillPermissions: { play_sound: 'auto', stop_sound: 'auto', journal: 'auto' }
 };
 
 module.exports = {

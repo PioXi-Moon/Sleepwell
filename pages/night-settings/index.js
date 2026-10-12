@@ -2,6 +2,14 @@ const prefs = require('../../services/night-preferences');
 const storage = require('../../services/storage');
 const navigation = require('../../utils/navigation');
 const { getNavigationMetrics } = require('../../utils/layout');
+const skillRegistry = require('../../skills/registry');
+
+const PERMISSION_LABELS = { auto: '直接执行', confirm: '每次确认', off: '停用' };
+const SKILL_HELP = {
+  play_sound: '对话中为你播放/切换环境声',
+  stop_sound: '对话中停止播放',
+  journal: '把口述的感恩内容写入日记'
+};
 const options = {
   personality: ['温柔陪伴','安静倾听','鼓励提醒','简洁高效'],
   voice: ['温柔女声','沉稳男声','自然环境声'],
@@ -17,9 +25,32 @@ Page({
   onShow() {
     let version = '开发版';
     try { const info = wx.getAccountInfoSync(); version = info.miniProgram.version || info.miniProgram.envVersion || version; } catch (error) {}
-    this.setData({ nav: getNavigationMetrics(), prefs: prefs.read(), version });
+    this.setData({ nav: getNavigationMetrics(), prefs: prefs.read(), version, skills: this.readSkills() });
     this.syncConcerns();
   },
+  readSkills() {
+    return skillRegistry.DEFINITIONS.map((skill) => ({
+      name: skill.name,
+      label: skill.label,
+      help: SKILL_HELP[skill.name] || '',
+      permission: skillRegistry.getPermission(skill.name),
+      permissionLabel: PERMISSION_LABELS[skillRegistry.getPermission(skill.name)]
+    }));
+  },
+  chooseSkillPermission(event) {
+    const name = event.currentTarget.dataset.name;
+    if (!skillRegistry.byName(name)) return;
+    const values = ['auto', 'confirm', 'off'];
+    wx.showActionSheet({
+      itemList: ['直接执行', '每次确认', '停用'],
+      success: ({ tapIndex }) => {
+        const next = skillRegistry.setPermission(name, values[tapIndex]);
+        if (!next) { wx.showToast({ title: '保存失败，请重试', icon: 'none' }); return; }
+        this.setData({ skills: this.readSkills() });
+      }
+    });
+  },
+  goMemoryFile() { wx.navigateTo({ url: '/pages/night-memory/index' }); },
   syncConcerns() { this.setData({ selectedConcerns: this.data.concerns.map((label) => ({ label, checked: this.data.prefs.concerns.indexOf(label) >= 0 })) }); },
   goBack() { navigation.backOrHome(); },
   update(changes) { const next = prefs.save(changes); if (!next) { wx.showToast({ title:'保存失败，请重试',icon:'none' }); return; } this.setData({ prefs: next }); this.syncConcerns(); },

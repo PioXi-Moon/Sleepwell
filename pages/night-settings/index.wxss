@@ -1,5 +1,5 @@
-page { background: #031a1c; }
-.ns-page { height: 100vh; display: flex; flex-direction: column; background: #031a1c; color: #f1ebdd; letter-spacing: 0; }
+page { background: #061719; }
+.ns-page { height: 100vh; display: flex; flex-direction: column; background: linear-gradient(180deg, #020e14 0%, #061719 52%, #0a2422 100%); color: #f1ebdd; letter-spacing: 0; }
 .ns-page button { margin: 0; padding: 0; background: transparent; color: inherit; font-size: 14px; line-height: 1.6; border-radius: 0; }
 .ns-top { position: relative; flex-shrink: 0; text-align: center; }
 .ns-top > text { position: absolute; bottom: 16px; left: 70px; right: 70px; font-size: 15px; }

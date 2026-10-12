@@ -4,7 +4,8 @@ const KEYS = {
   settings: 'sleepwell.settings.v1',
   sessions: 'sleepwell.sessions.v1',
   journal: 'sleepwell.journal.v1',
-  sleep: 'sleepwell.sleep.v1'
+  sleep: 'sleepwell.sleep.v1',
+  agentMemory: 'sleepwell.agent-memory.v1'
 };
 
 function read(key, fallback) {
@@ -108,7 +109,7 @@ function getSevenDaySummary(now, sessions) {
 }
 
 function clearPersonalRecords() {
-  const results = [write(KEYS.sessions, []), write(KEYS.journal, []), write(KEYS.sleep, [])];
+  const results = [write(KEYS.sessions, []), write(KEYS.journal, []), write(KEYS.sleep, []), write(KEYS.agentMemory, [])];
   return results.every(Boolean);
 }
 

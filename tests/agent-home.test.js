@@ -105,6 +105,38 @@ test('chat manages keyboard inset and cancels pending work when hidden or unload
   assert.equal(hasListener(), false);
 });
 
+test('retrying a failed turn reuses the same bubbles without duplicating the user message', () => {
+  const { page } = harness();
+  page.openChat();
+  page.onDraftChange({ detail: { value: '今晚很焦虑' } });
+  page.sendMessage();
+  // 无 wx.request 的测试环境：同步走规则引擎兜底完成，chatState 回到 idle。
+  const count = page.data.messages.length;
+  assert.ok(count >= 3);
+  // 手动模拟失败状态后重试：消息列表不应增加新气泡。
+  page.setData({ chatState: 'error' });
+  page.retryTurn();
+  assert.equal(page.data.messages.length, count);
+  assert.equal(page.data.chatState === 'sending' || page.data.chatState === 'idle', true);
+  assert.equal(page.data.messages.filter((item) => item.role === 'user').length, 1);
+});
+
+test('closeChat asks the memory service to summarize the conversation', () => {
+  const { page } = harness();
+  page.openChat();
+  page.onDraftChange({ detail: { value: '考试焦虑睡不着' } });
+  page.sendMessage();
+  let summaryRequest = null;
+  // agent-memory 是普通模块，读的是 global.wx；补上 request 以捕获摘要请求。
+  global.wx = Object.assign({}, global.wx, { request: (opts) => { summaryRequest = opts; } });
+  page.closeChat();
+  delete global.wx.request;
+  assert.ok(summaryRequest, 'closeChat should trigger a summarize request');
+  assert.equal(summaryRequest.data.stream, false);
+  const transcript = summaryRequest.data.messages[1].content;
+  assert.ok(transcript.indexOf('用户：考试焦虑睡不着') !== -1);
+});
+
 test('homepage actions target existing settings, breath and guide pages', () => {
   const { page, routes } = harness();
   page.openSettings(); page.goBreathe(); page.startGuide();

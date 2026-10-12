@@ -2,6 +2,12 @@ const navigation = require('../../utils/navigation');
 const { getNavigationMetrics } = require('../../utils/layout');
 const nightPreferences = require('../../services/night-preferences');
 const guide = require('../../utils/agent-guide');
+const agentContext = require('../../utils/agent-context');
+const agentMemory = require('../../services/agent-memory');
+const agentClient = require('../../services/agent-client');
+const skillRegistry = require('../../skills/registry');
+
+const RENDER_THROTTLE_MS = 80;
 
 Page({
   data: {
@@ -17,6 +23,7 @@ Page({
     showRecords: false,
     draft: '',
     canSend: false,
+    awaitingFirst: false,
     message: '',
     chatState: 'idle',
     recording: false,
@@ -61,8 +68,14 @@ Page({
   openRecords() { wx.reLaunch({ url: '/pages/record/index' }); },
   closeRecords() { this.setData({ showRecords: false }); },
   openChat() { if (this.data.homeState === 'initial') this.beginConversation(''); this.setData({ inputFocus: true }); },
+  buildOpening(topic) {
+    if (topic && guide.openings[topic]) return guide.openings[topic];
+    const last = agentMemory.lastMemory();
+    if (last && last.summary) return `上次你和我聊到「${last.summary}」。今晚还是这件事，还是有新的心事？`;
+    return this.data.welcomeQuestion || '今晚有什么让你难以放松？';
+  },
   beginConversation(topic) {
-    this.setData({ homeState: 'chat', showChat: true, activeTopic: topic, answers: [], recommendation: null, messages: [{ id: 'intro', role: 'agent', text: guide.openings[topic] || this.data.welcomeQuestion || '今晚有什么让你难以放松？' }], draft: '', canSend: false, inputFocus: false, scrollAnchor: 'conversation-end' });
+    this.setData({ homeState: 'chat', showChat: true, activeTopic: topic, answers: [], recommendation: null, messages: [{ id: 'intro', role: 'agent', text: this.buildOpening(topic) }], draft: '', canSend: false, awaitingFirst: false, inputFocus: false, scrollAnchor: 'conversation-end' });
   },
   playRecommendation() {
     const item = this.data.recommendation;
@@ -83,34 +96,155 @@ Page({
   },
   closeChat() {
     this.cancelPending();
+    if (this.data.messages.length > 1) {
+      // 后台生成对话摘要供下次开场使用；失败静默跳过，不阻塞返回首页。
+      agentMemory.summarizeConversation(this.data.messages, this.data.activeTopic);
+    }
     if (wx.hideKeyboard) wx.hideKeyboard();
-    this.setData({ homeState: 'initial', showChat: false, messages: [], answers: [], recommendation: null, draft: '', canSend: false, inputFocus: false, keyboardHeight: 0 });
+    this.setData({ homeState: 'initial', showChat: false, messages: [], answers: [], recommendation: null, draft: '', canSend: false, awaitingFirst: false, chatState: 'idle', inputFocus: false, keyboardHeight: 0 });
   },
   onDraftChange(event) { this.setData({ draft: event.detail.value, canSend: Boolean(event.detail.value.trim()) }); },
   onInputFocus() { this.setData({ inputFocus: true }); },
   onInputBlur() { this.setData({ inputFocus: false }); },
   cancelPending() {
-    clearTimeout(this.previewTimer);
+    if (this.renderTimer) { clearTimeout(this.renderTimer); this.renderTimer = null; }
+    if (this.pendingAgent) {
+      this.pendingAgent.abort();
+      this.pendingAgent = null;
+    }
     if (this.data.chatState === 'sending') this.setData({ chatState: 'error' });
+  },
+  // 执行一轮对话请求（发送与重试共用）：agentId 对应气泡已存在于 messages 中。
+  runAgentTurn(turn) {
+    const { agentId, history, answers } = turn;
+    if (this.pendingAgent) this.pendingAgent.abort();
+    this.renderedAgentText = null;
+    this.renderTimer = null;
+    this.updateAgentText = (text) => {
+      if (!text || text === this.renderedAgentText) return;
+      if (this.data.awaitingFirst) this.setData({ awaitingFirst: false });
+      if (this.renderTimer) return; // 已有排期，等节流窗口到期后统一渲染
+      this.renderTimer = setTimeout(() => {
+        this.renderTimer = null;
+        this.flushAgentText(text);
+      }, RENDER_THROTTLE_MS);
+    };
+    this.flushAgentText = (text) => {
+      this.renderedAgentText = text;
+      const index = this.data.messages.findIndex((item) => item.id === agentId);
+      if (index === -1) return;
+      const messages = this.data.messages.slice();
+      messages[index] = Object.assign({}, messages[index], { text });
+      this.setData({ messages, scrollAnchor: '' });
+      this.setData({ scrollAnchor: 'conversation-end' });
+    };
+    this.pendingAgent = agentClient.chat({
+      topic: this.data.activeTopic,
+      history,
+      answers,
+      context: agentContext.buildUserContext(),
+      onDelta: (text) => this.updateAgentText(text),
+      onComplete: (result) => {
+        this.pendingAgent = null;
+        if (this.data.homeState === 'initial') return; // 对话已被关闭，丢弃迟到的回复
+        if (this.renderTimer) { clearTimeout(this.renderTimer); this.renderTimer = null; }
+        this.flushAgentText(result.text);
+        this.setData({
+          chatState: 'idle',
+          awaitingFirst: false,
+          recommendation: result.recommendation || null,
+          homeState: result.recommendation ? 'recommendation' : 'chat'
+        });
+        if (result.skillCall && !result.skillCall.invalid) this.handleSkillCall(result.skillCall);
+      },
+      onError: () => {
+        this.pendingAgent = null;
+        this.setData({ chatState: 'error', awaitingFirst: false });
+      }
+    });
   },
   sendMessage() {
     const message = this.data.draft.trim();
     if (!message || this.data.chatState === 'sending') return;
     const answers = this.data.answers.concat(message);
-    const result = guide.next(this.data.activeTopic, answers);
-    const messages = this.data.messages.concat([{ id: `user-${answers.length}`, role: 'user', text: message }, { id: `agent-${answers.length}`, role: 'agent', text: result.reply }]);
-    this.setData({ message, answers, messages, recommendation: result.recommendation || null, homeState: result.recommendation ? 'recommendation' : 'chat', draft: '', canSend: false, chatState: 'idle', inputFocus: false, scrollAnchor: '' });
+    const history = this.data.messages.concat([{ id: `user-${answers.length}`, role: 'user', text: message }]);
+    const agentId = `agent-${answers.length}`;
+    this.setData({
+      message,
+      answers,
+      messages: history.concat([{ id: agentId, role: 'agent', text: '' }]),
+      recommendation: null,
+      homeState: 'chat',
+      draft: '',
+      canSend: false,
+      chatState: 'sending',
+      awaitingFirst: true,
+      inputFocus: false,
+      scrollAnchor: ''
+    });
     this.setData({ scrollAnchor: 'conversation-end' });
     if (wx.hideKeyboard) wx.hideKeyboard();
+    this.lastTurn = { agentId, history, answers };
+    this.runAgentTurn(this.lastTurn);
   },
-  retryMessage() {
-    if (!this.data.message || this.data.chatState === 'sending') return;
-    this.setData({ chatState: 'sending' });
-    this.showConnectionState();
+  // 失败重试：复用同一轮的历史与气泡，不在消息列表中重复用户发言。
+  retryTurn() {
+    const turn = this.lastTurn;
+    if (!turn || this.data.chatState === 'sending') return;
+    const index = this.data.messages.findIndex((item) => item.id === turn.agentId);
+    if (index === -1) return;
+    const messages = this.data.messages.slice();
+    messages[index] = Object.assign({}, messages[index], { text: '' });
+    this.setData({ messages, chatState: 'sending', awaitingFirst: true, recommendation: null, homeState: 'chat' });
+    this.runAgentTurn(turn);
   },
-  showConnectionState() {
-    clearTimeout(this.previewTimer);
-    // The UI preview has no Agent transport yet; never invent an AI response.
-    this.previewTimer = setTimeout(() => this.setData({ chatState: 'error' }), 700);
+  // 模型发起技能调用：按个性化权限分流。
+  handleSkillCall(call) {
+    const permission = skillRegistry.getPermission(call.skill);
+    if (permission === 'confirm') {
+      const messages = this.data.messages.concat([{
+        id: `skill-confirm-${Date.now()}`,
+        role: 'skill-confirm',
+        text: skillRegistry.confirmText(call),
+        call
+      }]);
+      this.setData({ messages, scrollAnchor: '' });
+      this.setData({ scrollAnchor: 'conversation-end' });
+      return;
+    }
+    const outcome = skillRegistry.run(call);
+    this.appendSkillOutcome(call, outcome);
+  },
+  appendSkillOutcome(call, outcome) {
+    const messages = this.data.messages.concat([{
+      id: `skill-${Date.now()}`,
+      role: 'skill',
+      text: outcome.message || '操作已完成',
+      skill: call.skill
+    }]);
+    this.setData({ messages, scrollAnchor: '' });
+    this.setData({ scrollAnchor: 'conversation-end' });
+  },
+  goSoundPage() { wx.navigateTo({ url: '/pages/sound/index' }); },
+  // 确认卡：用户点「执行」。
+  confirmSkill(event) {
+    const id = event.currentTarget.dataset.id;
+    const index = this.data.messages.findIndex((item) => item.id === id);
+    if (index === -1 || this.data.messages[index].role !== 'skill-confirm') return;
+    const call = this.data.messages[index].call;
+    const outcome = skillRegistry.executeNow(call);
+    const messages = this.data.messages.slice();
+    messages[index] = { id, role: 'skill', text: outcome.message || '操作已完成', skill: call.skill };
+    this.setData({ messages, scrollAnchor: '' });
+    this.setData({ scrollAnchor: 'conversation-end' });
+  },
+  // 确认卡：用户点「取消」。
+  cancelSkill(event) {
+    const id = event.currentTarget.dataset.id;
+    const index = this.data.messages.findIndex((item) => item.id === id);
+    if (index === -1 || this.data.messages[index].role !== 'skill-confirm') return;
+    const messages = this.data.messages.slice();
+    messages[index] = { id, role: 'skill', text: '已取消，今晚先不做这个' };
+    this.setData({ messages });
   }
 });

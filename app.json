@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/agent/index",
+    "pages/night-memory/index",
     "pages/record/index",
     "pages/night-settings/index",
     "pages/breathe/index",

@@ -5,6 +5,7 @@ const storage = require('../../services/storage');
 const guide = require('../../utils/agent-guide');
 const agentContext = require('../../utils/agent-context');
 const agentMemory = require('../../services/agent-memory');
+const agentPersona = require('../../utils/agent-persona');
 const agentClient = require('../../services/agent-client');
 const skillRegistry = require('../../skills/registry');
 const agentIcons = require('../../utils/agent-icons');
@@ -28,6 +29,7 @@ Page({
     awaitingFirst: false,
     message: '',
     chatState: 'idle',
+    streamState: 'idle',
     recording: false,
     voiceReady: false,
     keyboardHeight: 0,
@@ -74,9 +76,17 @@ Page({
   openChat() { if (this.data.homeState === 'initial') this.beginConversation(''); this.setData({ inputFocus: true }); },
   buildOpening(topic) {
     if (topic && guide.openings[topic]) return guide.openings[topic];
-    const last = agentMemory.lastMemory();
-    if (last && last.summary) return `上次你和我聊到「${last.summary}」。今晚还是这件事，还是有新的心事？`;
+    // 个性化开场受记忆开关实时控制。
+    if (nightPreferences.read().memoryEnabled) {
+      const last = agentMemory.lastMemory();
+      if (last && last.summary) return `上次你和我聊到「${last.summary}」。今晚还是这件事，还是有新的心事？`;
+    }
     return this.data.welcomeQuestion || '今晚有什么让你难以放松？';
+  },
+  // 双锚点交替触发滚动，保证单次 setData 内完成（减少渲染开销）。
+  flipAnchor() {
+    this.anchorFlip = !this.anchorFlip;
+    return this.anchorFlip ? 'conversation-end-a' : 'conversation-end-b';
   },
   beginConversation(topic) {
     this.setData({ homeState: 'chat', showChat: true, activeTopic: topic, answers: [], recommendation: null, messages: [{ id: 'intro', role: 'agent', text: this.buildOpening(topic) }], draft: '', canSend: false, awaitingFirst: false, inputFocus: false, scrollAnchor: 'conversation-end' });
@@ -128,7 +138,7 @@ Page({
     this.updateAgentText = (text) => {
       if (!text || text === this.renderedAgentText) return;
       this.latestStreamText = text;
-      if (this.data.awaitingFirst) this.setData({ awaitingFirst: false });
+      if (this.data.awaitingFirst) this.setData({ awaitingFirst: false, streamState: 'streaming' });
       if (this.renderTimer) return; // 已有排期，等节流窗口到期后统一渲染
       this.renderTimer = setTimeout(() => {
         this.renderTimer = null;
@@ -141,14 +151,14 @@ Page({
       if (index === -1) return;
       const messages = this.data.messages.slice();
       messages[index] = Object.assign({}, messages[index], { text });
-      this.setData({ messages, scrollAnchor: '' });
-      this.setData({ scrollAnchor: 'conversation-end' });
+      this.setData({ messages, scrollAnchor: this.flipAnchor() });
     };
     this.pendingAgent = agentClient.chat({
       topic: this.data.activeTopic,
       history,
       answers,
       context: agentContext.buildUserContext(),
+      persona: agentPersona.buildPersonaPrompt(),
       onDelta: (text) => this.updateAgentText(text),
       onComplete: (result) => {
         this.pendingAgent = null;
@@ -160,6 +170,7 @@ Page({
           messages,
           chatState: 'idle',
           awaitingFirst: false,
+          streamState: 'idle',
           lastAgentId: agentId,
           recommendation: result.recommendation || null,
           homeState: result.recommendation ? 'recommendation' : 'chat'
@@ -174,10 +185,10 @@ Page({
           if (this.renderTimer) { clearTimeout(this.renderTimer); this.renderTimer = null; }
           if (this.latestStreamText) this.flushAgentText(this.latestStreamText);
           const messages = this.data.messages.map((item) => (item.id === agentId ? Object.assign({}, item, { done: true }) : item));
-          this.setData({ messages, chatState: 'idle', awaitingFirst: false, lastAgentId: agentId });
+          this.setData({ messages, chatState: 'idle', awaitingFirst: false, streamState: 'idle', lastAgentId: agentId });
           return;
         }
-        this.setData({ chatState: 'error', awaitingFirst: false });
+        this.setData({ chatState: 'error', awaitingFirst: false, streamState: 'idle' });
       }
     });
   },
@@ -197,10 +208,10 @@ Page({
       canSend: false,
       chatState: 'sending',
       awaitingFirst: true,
+      streamState: 'listening',
       inputFocus: false,
-      scrollAnchor: ''
+      scrollAnchor: this.flipAnchor()
     });
-    this.setData({ scrollAnchor: 'conversation-end' });
     if (wx.hideKeyboard) wx.hideKeyboard();
     this.lastTurn = { agentId, history, answers };
     this.runAgentTurn(this.lastTurn);
@@ -213,7 +224,7 @@ Page({
     if (index === -1) return;
     const messages = this.data.messages.slice();
     messages[index] = Object.assign({}, messages[index], { text: '' });
-    this.setData({ messages, chatState: 'sending', awaitingFirst: true, recommendation: null, homeState: 'chat' });
+    this.setData({ messages, chatState: 'sending', awaitingFirst: true, streamState: 'listening', recommendation: null, homeState: 'chat', scrollAnchor: this.flipAnchor() });
     this.runAgentTurn(turn);
   },
   // 模型发起技能调用：按个性化权限分流。
@@ -240,8 +251,7 @@ Page({
       text: outcome.message || '操作已完成',
       skill: call.skill
     }]);
-    this.setData({ messages, scrollAnchor: '' });
-    this.setData({ scrollAnchor: 'conversation-end' });
+    this.setData({ messages, scrollAnchor: this.flipAnchor() });
   },
   goSoundPage() { wx.navigateTo({ url: '/pages/sound/index' }); },
   // 确认卡：用户点「执行」。
@@ -253,8 +263,7 @@ Page({
     const outcome = skillRegistry.executeNow(call);
     const messages = this.data.messages.slice();
     messages[index] = { id, role: 'skill', text: outcome.message || '操作已完成', skill: call.skill };
-    this.setData({ messages, scrollAnchor: '' });
-    this.setData({ scrollAnchor: 'conversation-end' });
+    this.setData({ messages, scrollAnchor: this.flipAnchor() });
   },
   // 确认卡：用户点「取消」。
   cancelSkill(event) {
@@ -298,7 +307,7 @@ Page({
     if (index === -1) return;
     const messages = this.data.messages.slice();
     messages[index] = Object.assign({}, messages[index], { text: '', done: false, feedback: '' });
-    this.setData({ messages, chatState: 'sending', awaitingFirst: true, recommendation: null, homeState: 'chat' });
+    this.setData({ messages, chatState: 'sending', awaitingFirst: true, streamState: 'listening', recommendation: null, homeState: 'chat', scrollAnchor: this.flipAnchor() });
     this.runAgentTurn(turn);
   },
   stopGeneration() {

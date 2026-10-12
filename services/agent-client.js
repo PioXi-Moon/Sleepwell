@@ -26,13 +26,15 @@ const TOPIC_LABELS = {
   thoughts: '脑子停不下来'
 };
 
-function buildSystemPrompt(topic, context) {
+function buildSystemPrompt(topic, context, persona) {
   const topicLine = topic && TOPIC_LABELS[topic] ? `用户选择的倾诉话题是「${TOPIC_LABELS[topic]}」。` : '';
   const contextBlock = context ? `\n${context}\n` : '';
+  const personaBlock = persona ? `\n${persona}\n` : '';
   const skillBlock = registry.buildSkillPromptSection();
   return [
     '你是“夜喵”，一个面向大学生的深夜睡前陪伴 AI，帮助用户在睡前放下压力、慢慢平静。',
     topicLine,
+    personaBlock,
     contextBlock,
     '对话规则：',
     '- 语气温暖、平静、不评判，像一位可靠的朋友在深夜陪伴。',
@@ -138,12 +140,12 @@ function gatewayHeaders() {
 
 function chat(options) {
   const opts = options || {};
-  const { topic = '', history = [], answers = [], context = '' } = opts;
+  const { topic = '', history = [], answers = [], context = '', persona = '' } = opts;
   const onDelta = typeof opts.onDelta === 'function' ? opts.onDelta : null;
   const onComplete = typeof opts.onComplete === 'function' ? opts.onComplete : null;
   const onError = typeof opts.onError === 'function' ? opts.onError : null;
 
-  const messages = [{ role: 'system', content: buildSystemPrompt(topic, context) }].concat(mapHistory(history));
+  const messages = [{ role: 'system', content: buildSystemPrompt(topic, context, persona) }].concat(mapHistory(history));
   let full = '';
   let settled = false;
   let aborted = false;

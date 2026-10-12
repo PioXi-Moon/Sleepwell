@@ -3,7 +3,7 @@
 .nm-page { display: flex; flex-direction: column; width: 100%; height: 100vh; background: linear-gradient(180deg, #020e14 0%, #061719 52%, #0a2422 100%); }
 .nm-scroll { flex: 1; min-height: 0; }
 .nm-content { padding: 24rpx 32rpx 48rpx; }
-.nm-card { padding: 28rpx 30rpx; border: 1rpx solid rgba(232,200,135,.16); border-radius: 20rpx; background: linear-gradient(135deg, rgba(24,48,50,.5), rgba(10,26,28,.44)); box-shadow: 0 12rpx 40rpx rgba(0,0,0,.2), inset 0 1rpx 0 rgba(255,255,255,.05); backdrop-filter: blur(24rpx); }
+.nm-card { padding: 28rpx 30rpx; border: 1rpx solid rgba(232,200,135,.16); border-radius: 20rpx; background: linear-gradient(135deg, rgba(24,48,50,.5), rgba(10,26,28,.44)); box-shadow: 0 8rpx 24rpx rgba(0,0,0,.14); }
 .nm-text { display: block; color: #c9d8d3; font-size: 14px; line-height: 2; white-space: pre-wrap; word-break: break-all; }
 .nm-empty { margin-top: 24rpx; color: var(--night-muted); font-size: 13px; text-align: center; }
 .nm-clear { margin-top: 32rpx; min-height: 48px; color: #b87878; font-size: 14px; line-height: 48px; background: transparent; border: 1px solid #4a3535; border-radius: 14rpx; }

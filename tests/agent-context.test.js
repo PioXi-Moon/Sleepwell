@@ -33,7 +33,8 @@ test('builds a context summary from breath sessions, sleep and journal records',
 });
 
 test('returns empty context when the user has no records yet', () => {
-  const context = withStorage({}, () => buildUserContext(Date.now()));
+  // 用白天时间戳：作息行仅夜间注入，保证新用户上下文为空。
+  const context = withStorage({}, () => buildUserContext(new Date('2026-10-12T15:00:00').getTime()));
   assert.equal(context, '');
 });
 
@@ -50,7 +51,7 @@ test('storage failures degrade to empty context without throwing', () => {
   const original = global.wx;
   global.wx = { getStorageSync() { throw new Error('storage broken'); } };
   try {
-    assert.equal(buildUserContext(Date.now()), '');
+    assert.equal(buildUserContext(new Date('2026-10-12T15:00:00').getTime()), '');
   } finally {
     if (original) global.wx = original; else delete global.wx;
   }

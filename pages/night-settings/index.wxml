@@ -2,7 +2,7 @@
   <view class="ns-top" style="{{nav.topbarStyle}}"><button bindtap="goBack" class="ns-back" aria-label="返回夜喵"><image src="/assets/agent/icons/arrow-left-muted.png"/></button><text>夜喵设置</text></view>
   <scroll-view class="ns-scroll" scroll-y><view class="ns-content">
     <text class="ns-title">{{fromChat ? '对话设置' : '设置'}}</text>
-    <view wx:if="{{false}}" class="ns-section"><text class="ns-section-title">夜喵陪伴</text>
+    <view class="ns-section"><text class="ns-section-title">夜喵陪伴</text>
       <button class="ns-row" bindtap="openPreferences"><view><text>我的睡前偏好</text><text class="ns-help">让夜喵了解你</text></view><text class="ns-value">设置 ›</text></button>
       <view class="ns-memory"><view class="ns-row"><view><text class="ns-memory-title">夜喵记忆</text><text class="ns-help">开启后，夜喵会记住你的习惯和偏好，让每次聊天更贴近你。</text></view><switch checked="{{prefs.memoryEnabled}}" color="#ebc979" data-key="memoryEnabled" bindchange="toggle"/></view><text class="ns-help">当前仅保存在本机，聊天服务接入后使用。</text><view class="ns-memory-actions"><button bindtap="manageMemory">管理记忆 ›</button><button class="ns-danger" bindtap="deleteMemory">删除记忆</button></view></view>
     </view>

@@ -4,6 +4,8 @@
 
 const storage = require('../services/storage');
 const agentMemory = require('../services/agent-memory');
+const agentPersona = require('./agent-persona');
+const nightPreferences = require('../services/night-preferences');
 
 function safeRead(reader, fallback) {
   try {
@@ -48,6 +50,9 @@ function buildJournalLine() {
 }
 
 function buildMemoryLine() {
+  // 记忆注入受设置页「夜喵记忆」开关实时控制。
+  const enabled = safeRead(() => nightPreferences.read().memoryEnabled, false);
+  if (!enabled) return '';
   const last = safeRead(() => agentMemory.lastMemory(), null);
   if (!last || !last.summary) return '';
   return `用户上次和夜喵聊天（${agentMemory.formatWhen(last.at)}）聊到：${last.summary}。`;
@@ -55,7 +60,8 @@ function buildMemoryLine() {
 
 // 返回注入用的上下文段落；无任何记录时返回空字符串。
 function buildUserContext(now) {
-  const lines = [buildBreathLine(now), buildSleepLine(), buildJournalLine(), buildMemoryLine()].filter(Boolean);
+  const personaContext = safeRead(() => agentPersona.buildPersonaContext(now), '');
+  const lines = [buildBreathLine(now), buildSleepLine(), buildJournalLine(), buildMemoryLine(), personaContext].filter(Boolean);
   if (!lines.length) return '';
   return [
     '以下是用户的本地记录摘要（仅你可见）。只在相关时机自然地引用一两处，不要一次性罗列，也不要让用户感觉被监控：',

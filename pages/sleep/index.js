@@ -1,6 +1,7 @@
 const storage = require('../../services/storage');
 const navigation = require('../../utils/navigation');
 const { getNavigationMetrics } = require('../../utils/layout');
+const calendar = require('../../utils/sleep-calendar');
 
 Page({
   data: {
@@ -12,7 +13,21 @@ Page({
     feelings: [1, 2, 3, 4, 5],
     nav: getNavigationMetrics()
   },
-  onLoad() { this.setData({ records: storage.read(storage.KEYS.sleep, []) }); },
+  onLoad(options = {}) {
+    const records = storage.read(storage.KEYS.sleep, []);
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const nightDate = calendar.parseDate(options.nightDate) ? options.nightDate : calendar.dateKey(yesterday);
+    const existing = records.find((item) => item.nightDate === nightDate);
+    this.setData(Object.assign({ records, nightDate }, existing ? { bedTime: existing.bedTime, wakeTime: existing.wakeTime, feeling: existing.feeling } : {}));
+    this.calculateDuration();
+  },
+  onDateChange(event) {
+    const nightDate = event.detail.value;
+    if (!calendar.parseDate(nightDate)) return;
+    const existing = this.data.records.find((item) => item.nightDate === nightDate);
+    this.setData(Object.assign({ nightDate }, existing ? { bedTime: existing.bedTime, wakeTime: existing.wakeTime, feeling: existing.feeling } : {}));
+    this.calculateDuration();
+  },
   onShow() { this.setData({ nav: getNavigationMetrics() }); },
   goBack() { navigation.backOrHome(); },
   onBedChange(event) { this.setData({ bedTime: event.detail.value }, () => this.calculateDuration()); },
@@ -28,11 +43,14 @@ Page({
     this.setData({ duration: `${hours} 小时${rest ? ` ${rest} 分钟` : ''}` });
   },
   saveSleep() {
-    const now = new Date();
+    const now = calendar.parseDate(this.data.nightDate);
+    if (!now || this.data.nightDate > calendar.dateKey(new Date())) { wx.showToast({ title: '请选择有效的夜间日期', icon: 'none' }); return; }
     const records = storage.read(storage.KEYS.sleep, []);
-    records.unshift({ id: `sleep-${Date.now()}`, bedTime: this.data.bedTime, wakeTime: this.data.wakeTime, feeling: this.data.feeling, duration: this.data.duration, date: `${now.getMonth() + 1} 月 ${now.getDate()} 日` });
-    storage.write(storage.KEYS.sleep, records.slice(0, 30));
-    this.setData({ records: records.slice(0, 30) });
+    const existing = records.find((item) => item.nightDate === this.data.nightDate);
+    const next = records.filter((item) => item.nightDate !== this.data.nightDate);
+    next.unshift({ id: existing ? existing.id : `sleep-${Date.now()}`, createdAt: existing ? existing.createdAt : Date.now(), updatedAt: Date.now(), nightDate: this.data.nightDate, bedTime: this.data.bedTime, wakeTime: this.data.wakeTime, feeling: this.data.feeling, duration: this.data.duration, date: `${now.getMonth() + 1} 月 ${now.getDate()} 日` });
+    if (!storage.write(storage.KEYS.sleep, next.slice(0, 366))) { wx.showToast({ title: '保存未成功，请重试', icon: 'none' }); return; }
+    this.setData({ records: next.slice(0, 366) });
     wx.showToast({ title: '已经记下', icon: 'none' });
   }
 });

@@ -17,9 +17,10 @@ Page({
     timerMinutes: 30,
     nav: getNavigationMetrics()
   },
-  onLoad() {
+  onLoad(options = {}) {
     const state = getApp().globalData.audioState;
     this.setData({ selected: state.sound || this.data.selected, playing: state.playing, volume: Math.round((state.volume || 0.42) * 100), timerMinutes: state.timerMinutes || 30 });
+    if (this.data.sounds.some((item) => item.id === options.sound)) this.setData({ selected: options.sound, playing: false, timerMinutes: [15,30,60].indexOf(Number(options.minutes)) >= 0 ? Number(options.minutes) : 30 });
   },
   onShow() { this.setData({ playing: getApp().globalData.audioState.playing, nav: getNavigationMetrics() }); },
   goBack() { navigation.backOrHome(); },

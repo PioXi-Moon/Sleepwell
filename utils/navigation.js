@@ -4,7 +4,7 @@ function backOrHome() {
     wx.navigateBack({ delta: 1 });
     return;
   }
-  wx.reLaunch({ url: '/pages/breathe/index' });
+  wx.reLaunch({ url: '/pages/agent/index' });
 }
 
 function exitMiniProgram() {

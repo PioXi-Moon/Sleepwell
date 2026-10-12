@@ -2,23 +2,78 @@
   "description": "呼吸空间 - 轻量放松微信小程序",
   "packOptions": {
     "ignore": [
-      { "type": "folder", "value": ".git" },
-      { "type": "folder", "value": ".worktrees" },
-      { "type": "folder", "value": "Fig" },
-      { "type": "folder", "value": "docs" },
-      { "type": "folder", "value": "tests" },
-      { "type": "folder", "value": "tools" },
-      { "type": "file", "value": "README.md" },
-      { "type": "file", "value": "assets/dandelion-v2.png" },
-      { "type": "file", "value": "assets/dandelion.svg" },
-      { "type": "file", "value": "assets/body-silhouette.png" },
-      { "type": "folder", "value": "assets/dandelion/checks" },
-      { "type": "file", "value": "assets/dandelion/build_layers.py" },
-      { "type": "file", "value": "assets/dandelion/photo-full.png" },
-      { "type": "file", "value": "assets/dandelion/photo-loosened.png" },
-      { "type": "file", "value": "assets/dandelion/photo-sparse.png" },
-      { "type": "file", "value": "assets/dandelion/photo-sparse-v2.png" },
-      { "type": "suffix", "value": ".wav" }
+      {
+        "value": "assets/animation/sleepwell-starry-breath-4-7-8.gif",
+        "type": "file"
+      },
+      {
+        "value": ".git",
+        "type": "folder"
+      },
+      {
+        "value": ".worktrees",
+        "type": "folder"
+      },
+      {
+        "value": "Fig",
+        "type": "folder"
+      },
+      {
+        "value": "docs",
+        "type": "folder"
+      },
+      {
+        "value": "tests",
+        "type": "folder"
+      },
+      {
+        "value": "tools",
+        "type": "folder"
+      },
+      {
+        "value": "README.md",
+        "type": "file"
+      },
+      {
+        "value": "assets/dandelion-v2.png",
+        "type": "file"
+      },
+      {
+        "value": "assets/dandelion.svg",
+        "type": "file"
+      },
+      {
+        "value": "assets/body-silhouette.png",
+        "type": "file"
+      },
+      {
+        "value": "assets/dandelion/checks",
+        "type": "folder"
+      },
+      {
+        "value": "assets/dandelion/build_layers.py",
+        "type": "file"
+      },
+      {
+        "value": "assets/dandelion/photo-full.png",
+        "type": "file"
+      },
+      {
+        "value": "assets/dandelion/photo-loosened.png",
+        "type": "file"
+      },
+      {
+        "value": "assets/dandelion/photo-sparse.png",
+        "type": "file"
+      },
+      {
+        "value": "assets/dandelion/photo-sparse-v2.png",
+        "type": "file"
+      },
+      {
+        "value": ".wav",
+        "type": "suffix"
+      }
     ],
     "include": []
   },

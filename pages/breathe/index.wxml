@@ -71,12 +71,9 @@
   <button wx:if="{{phase !== 'idle' && phase !== 'completed'}}" class="stop-breath" bindtap="stopBreathing" aria-label="停止呼吸">停止</button>
 
   <view class="bottom-nav safe-bottom">
-    <button class="nav-item" bindtap="goBody">
-      <view class="nav-icon body-nav-icon" aria-hidden="true">
-        <view class="body-nav-icon__head"></view>
-        <view class="body-nav-icon__shoulders"></view>
-      </view>
-      <text>身体</text>
+    <button class="nav-item" bindtap="goAgent">
+      <image class="nav-icon" src="/assets/agent/icons/cat-muted.png" aria-hidden="true"></image>
+      <text>夜喵</text>
     </button>
     <button class="nav-item nav-item--world is-selected" bindlongpress="openWorldPicker" bindtap="noop" aria-label="长按切换呼吸世界">
       <view class="nav-icon world-nav-icon" aria-hidden="true">
@@ -176,37 +173,4 @@
     </view>
   </view>
 
-  <view class="sheet-mask {{showRecords ? 'is-open' : ''}}" catchtap="closeRecords">
-    <view class="bottom-sheet records-sheet" catchtap="noop">
-      <view class="sheet-handle"></view>
-      <button class="sheet-close" catchtap="closeRecords" aria-label="关闭记录"><view class="close-icon"></view></button>
-      <view class="record-heading">
-        <view><text class="sheet-title">最近的呼吸</text><text class="record-total">共 {{totalBreaths}} 次</text></view>
-      </view>
-      <view wx:if="{{recentSessions.length}}" class="session-list">
-        <view wx:for="{{recentSessions}}" wx:key="id" class="session-row">
-          <text>{{item.time}}{{item.part ? ' · ' + item.part : ''}}</text>
-          <text>{{item.cycles}} 次呼吸</text>
-        </view>
-      </view>
-      <view wx:else class="empty-record">第一轮呼吸会留在这里。</view>
-      <view class="seven-day">
-        <text class="seven-day-title">最近 7 天</text>
-        <view class="seven-day-metrics">
-          <view><text>{{sevenDay.activeDays}}</text><text>使用天数</text></view>
-          <view><text>{{sevenDay.completedSessions}}</text><text>完整结束</text></view>
-        </view>
-        <view class="outcome-summary">
-          <text>松一点 {{sevenDay.outcomes.relieved}}</text>
-          <text>差不多 {{sevenDay.outcomes.same}}</text>
-          <text>还紧绷 {{sevenDay.outcomes.tense}}</text>
-        </view>
-      </view>
-      <view class="record-links">
-        <button data-url="/pages/journal/index" bindtap="goPage"><text class="record-link-icon">✎</text><text>感恩日记</text><text>›</text></button>
-        <button data-url="/pages/sleep/index" bindtap="goPage"><text class="record-link-icon">☾</text><text>睡眠记录</text><text>›</text></button>
-        <button data-url="/pages/sound/index" bindtap="goPage"><text class="record-link-icon">♪</text><text>环境声音</text><text>›</text></button>
-      </view>
-    </view>
-  </view>
 </view>

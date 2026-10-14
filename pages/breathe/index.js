@@ -270,10 +270,11 @@ Page({
 
   chooseWorld(event) {
     const world = event.currentTarget.dataset.world || this.data.previewWorld;
-    if (!world) return;
+    if (!this.data.showWorldPicker || !WORLDS.some((item) => item.id === world)) return;
     const settings = storage.saveSettings(Object.assign({}, this.data.settings, { world }));
     const currentWorld = WORLDS.find((item) => item.id === world) || WORLDS[0];
     this.setData({ settings, currentWorld, showWorldPicker: false, previewWorld: '' });
+    this.gentleHaptic();
   },
 
   onRhythmChange(event) {

@@ -51,9 +51,7 @@
   </block>
 
   <block wx:elif="{{world === 'mist'}}">
-    <view class="mist-cloud mist-cloud--one"></view>
-    <view class="mist-cloud mist-cloud--two"></view>
-    <view class="mist-cloud mist-cloud--three"></view>
+    <image wx:for="{{moonlitFrames}}" wx:key="id" class="moonlit-surface" src="{{item.src}}" mode="aspectFill" style="opacity: {{item.opacity}};"></image>
   </block>
 
   <block wx:elif="{{world === 'moon'}}">

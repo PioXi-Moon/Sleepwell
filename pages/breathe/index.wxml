@@ -1,4 +1,7 @@
 <view class="page-shell breathe-page world-bg--{{previewWorld || settings.world}}">
+  <view wx:if="{{(previewWorld || settings.world) === 'mist'}}" class="moonlit-page-background">
+    <world-visual world="mist" phase="{{phase}}"></world-visual>
+  </view>
   <view class="topbar" style="{{nav.topbarStyle}}">
     <view class="topbar-leading">
       <button class="icon-button icon-button--exit" bindtap="exitMiniProgram" aria-label="退出小程序">
@@ -51,7 +54,7 @@
     catchtouchcancel="handlePressCancel"
     aria-label="按住吸气，松开呼气"
   >
-    <world-visual world="{{previewWorld || settings.world}}" phase="{{phase}}" cycles="{{cycles}}" target-cycles="{{settings.targetCycles}}"></world-visual>
+    <world-visual wx:if="{{(previewWorld || settings.world) !== 'mist'}}" world="{{previewWorld || settings.world}}" phase="{{phase}}" cycles="{{cycles}}" target-cycles="{{settings.targetCycles}}"></world-visual>
     <view class="breath-orb breath-orb--{{phase}}">
       <view class="breath-orb__halo breath-orb__halo--outer"></view>
       <view class="breath-orb__halo breath-orb__halo--inner"></view>

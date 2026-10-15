@@ -9,7 +9,8 @@
     }
   },
   "usingComponents": {
-    "world-visual": "/components/world-visual/index"
+    "world-visual": "/components/world-visual/index",
+    "lavender-scene": "/components/lavender-scene/index"
   },
   "disableScroll": true
 }

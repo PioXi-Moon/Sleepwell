@@ -1,8 +1,0 @@
-{
-  "navigationStyle": "custom",
-  "disableScroll": true,
-  "backgroundColor": "#06231E",
-  "usingComponents": {
-    "night-tabbar": "/components/night-tabbar/index"
-  }
-}

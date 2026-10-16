@@ -3,10 +3,12 @@ function getNavigationMetrics() {
   let menuTop = 32;
   let menuBottom = 68;
   let windowWidth = 375;
+  let windowHeight = 0;
   let rightInset = 104;
   try {
     const windowInfo = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
     windowWidth = windowInfo.windowWidth || windowInfo.screenWidth || windowWidth;
+    windowHeight = windowInfo.windowHeight || windowInfo.screenHeight || 0;
     statusBarHeight = windowInfo.statusBarHeight || statusBarHeight;
   } catch (error) {}
   try {
@@ -20,6 +22,8 @@ function getNavigationMetrics() {
   const capsuleGap = Math.max(8, menuTop - statusBarHeight);
   const navigationBottom = menuBottom + capsuleGap;
   return {
+    windowWidth,
+    windowHeight,
     statusBarHeight,
     navigationHeight: navigationBottom - statusBarHeight,
     navigationBottom,

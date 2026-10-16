@@ -1,0 +1,81 @@
+.relax-page {
+  background: linear-gradient(180deg, #08281f 0%, #06231e 40%, #06231e 100%);
+}
+
+.relax-body {
+  padding-bottom: 40rpx;
+}
+
+.relax-head {
+  display: flex;
+  align-items: center;
+}
+
+.relax-mark {
+  width: 42rpx;
+  height: 42rpx;
+  margin-right: 16rpx;
+}
+
+.relax-title {
+  color: var(--cat-title);
+  font-size: 44rpx;
+  font-weight: 700;
+  line-height: 60rpx;
+}
+
+.relax-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+  margin-top: 36rpx;
+}
+
+.relax-row {
+  display: flex;
+  align-items: center;
+  padding: 30rpx 26rpx;
+  border: 1rpx solid var(--cat-card-line);
+  border-radius: 27rpx;
+  background: var(--cat-card);
+  text-align: left;
+}
+
+.relax-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.relax-label {
+  color: var(--cat-title);
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 42rpx;
+}
+
+.relax-detail {
+  margin-top: 4rpx;
+  color: var(--cat-sub);
+  font-size: 23rpx;
+  line-height: 33rpx;
+}
+
+.relax-go {
+  flex: none;
+  width: 32rpx;
+  height: 32rpx;
+  margin-left: 16rpx;
+}
+
+.dock-tabbar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.is-pressed {
+  opacity: 0.72;
+}

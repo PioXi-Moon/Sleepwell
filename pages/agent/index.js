@@ -27,13 +27,40 @@ Page({
     totalBreaths: 0,
     sevenDay: { activeDays: 0, completedSessions: 0, outcomes: { relieved: 0, same: 0, tense: 0 } }
   },
-  onLoad() {
+  onLoad(options) {
     this.recorder = wx.getRecorderManager ? wx.getRecorderManager() : null;
     if (this.recorder && this.recorder.onStop) this.recorder.onStop((result) => this.setData({ recording: false, voiceReady: Boolean(result && result.tempFilePath) }));
     this.keyboardListener = (event) => {
       this.setData({ keyboardHeight: this.data.showChat ? Math.max(0, event.height || 0) : 0 });
     };
     if (wx.onKeyboardHeightChange) wx.onKeyboardHeightChange(this.keyboardListener);
+    this.applyEntryOptions(options || {});
+  },
+  /**
+   * 首页 / 咨询师页带过来的入口参数：
+   * prompt —— 以某位咨询师的开场白直接进入对话；
+   * draft  —— 把首页输入框里的内容作为第一句发出去。
+   * 两者都由本地引导脚本回复，不涉及任何 AI 或服务端接口。
+   */
+  applyEntryOptions(options) {
+    if (options.prompt) {
+      this.beginConversation('', this.decodeParam(options.prompt).slice(0, 120));
+      return;
+    }
+    if (options.draft) {
+      const draft = this.decodeParam(options.draft).slice(0, 200);
+      this.beginConversation('');
+      this.setData({ draft, canSend: Boolean(draft) });
+      this.sendMessage();
+    }
+  },
+  decodeParam(value) {
+    if (!value) return '';
+    try {
+      return decodeURIComponent(value);
+    } catch (error) {
+      return String(value);
+    }
   },
   onShow() {
     const preferences = nightPreferences.read();
@@ -61,8 +88,8 @@ Page({
   openRecords() { wx.reLaunch({ url: '/pages/record/index' }); },
   closeRecords() { this.setData({ showRecords: false }); },
   openChat() { if (this.data.homeState === 'initial') this.beginConversation(''); this.setData({ inputFocus: true }); },
-  beginConversation(topic) {
-    this.setData({ homeState: 'chat', showChat: true, activeTopic: topic, answers: [], recommendation: null, messages: [{ id: 'intro', role: 'agent', text: guide.openings[topic] || this.data.welcomeQuestion || '今晚有什么让你难以放松？' }], draft: '', canSend: false, inputFocus: false, scrollAnchor: 'conversation-end' });
+  beginConversation(topic, openingText) {
+    this.setData({ homeState: 'chat', showChat: true, activeTopic: topic, answers: [], recommendation: null, messages: [{ id: 'intro', role: 'agent', text: openingText || guide.openings[topic] || this.data.welcomeQuestion || '今晚有什么让你难以放松？' }], draft: '', canSend: false, inputFocus: false, scrollAnchor: 'conversation-end' });
   },
   playRecommendation() {
     const item = this.data.recommendation;
